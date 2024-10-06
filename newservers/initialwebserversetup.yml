@@ -1,0 +1,51 @@
+---
+- name: Laravel Server Web Setup
+- hosts: newservers
+  become: true
+
+    - name: Create var/www/domain
+      ansible.builtin.file:
+        path: /var/www/{{ url }}
+        state: directory
+        mode: '0755'
+    
+    - name: Create var/www/domain/www
+      ansible.builtin.file:
+        path: /var/www/{{ url }}/www
+        state: directory
+        mode: '0755'
+    
+    - name: Create var/www/domain/public
+      ansible.builtin.file:
+        path: /var/www/{{ url }}/www/public
+        state: directory
+        mode: '0755'
+        
+    - name: Change ownership of domain directory to client user
+      ansible.builtin.file:
+        path: /var/www/{{ url }}
+        state: directory
+        recurse: yes
+        owner: {{ inventory_hostname }}
+        
+    - name: Symlink domain directory to client user
+      ansible.builtin.file:
+        src: /var/www/{{ url }}
+        dest: /home/{{ inventory_hostname }}/
+        owner: {{ inventory_hostname }}
+        state: link
+        
+    - name: Set the directory as git safe
+        ansible.builtin.raw: git config --global --add safe.directory /var/www/{{ url }}/www
+
+    - name: Create the nginx config file
+      ansible.builtin.template:
+        src: templates/nginxtemplate
+        dest: /etc/nginx/sites-available/{{ url }}
+
+    - name: Symlink nginx file
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/{{ url }}
+        dest: /etc/nginx/sites-enabled/
+        owner: {{ inventory_hostname }}
+        state: link

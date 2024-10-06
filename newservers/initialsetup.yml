@@ -1,0 +1,109 @@
+---
+- name: Laravel Server Initial Setup
+- hosts: newservers
+  become: true
+    
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: 'yes'
+        update_cache: yes
+    
+    - name: Create a new ansible controller user with sudo privileges
+      user:
+        name: "controller"
+        state: present
+        groups: sudo
+        append: true
+        create_home: true
+          
+    - name: Copy ansible server's SSH key
+      ansible.posix.authorized_key:
+        user: "controller"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
+      
+    - name: Create a new personal with sudo privileges
+      user:
+        name: "{{ inventory_hostname }}"
+        state: present
+        groups: sudo
+        append: true
+        create_home: true
+        
+    - name: Copy personal client's SSH key
+      ansible.posix.authorized_key:
+        user: "controller"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/client.pub') }}"
+
+    - name: Disable password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        
+    - name: Disable password authentication for DigitalOcean
+      lineinfile:
+        path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+        state: present
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+    
+    - name: Update apt and install packages
+      apt:
+        pkg:
+          - nginx
+          - curl 
+          - wget
+          - mariadb-client
+          - fail2ban
+          - certbot
+          - python3-certbot-nginx
+        state: latest
+        update_cache: true
+        
+    - name: Install PHP packages
+      apt:
+        pkg:
+          - php-fpm
+          - php-bcmath 
+          - php-json
+          - php-mbstring
+          - php-mysql
+          - php-tokenizer
+          - php-xml
+          - php-zip
+          - php-curl
+          - php-gd
+          - php-intl
+          - php-imagick
+          - imagemagick
+          - composer
+        state: latest
+        update_cache: true
+    
+    - name: UFW - Allow SSH connections
+      community.general.ufw:
+        rule: allow
+        name: 'OpenSSH'
+
+    - name: UFW - Allow Nginx connections
+      community.general.ufw:
+        rule: allow
+        name: 'Nginx Full'
+
+    - name: UFW - Enable and deny by default
+      community.general.ufw:
+        state: enabled
+        default: deny
+
+    - name: Start fail2ban service
+      service:
+        name: fail2ban
+        state: started
+
+    - name: Enable fail2ban service
+      service:
+        name: fail2ban
+        enabled: true
