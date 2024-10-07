@@ -1,7 +1,7 @@
 ---
 - name: Laravel Server Initial Setup
-- hosts: newservers
-  become: true
+- hosts: '{{ target }}'
+  become_user: root
     
     - name: Update and upgrade apt packages
       apt:
@@ -20,9 +20,9 @@
       ansible.posix.authorized_key:
         user: "controller"
         state: present
-        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
+        key: "{{ lookup('file', '/home/controller/.ssh/id_ed25519.pub') }}"
       
-    - name: Create a new personal with sudo privileges
+    - name: Create a new personal user with sudo privileges
       user:
         name: "{{ inventory_hostname }}"
         state: present
@@ -32,9 +32,9 @@
         
     - name: Copy personal client's SSH key
       ansible.posix.authorized_key:
-        user: "controller"
+        user: "{{ inventory_hostname }}"
         state: present
-        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/client.pub') }}"
+        key: "{{ lookup('file', '/home/controller/ssh/client.pub') }}"
 
     - name: Disable password authentication
       lineinfile:
@@ -49,6 +49,13 @@
         state: present
         regexp: '^#?PasswordAuthentication'
         line: 'PasswordAuthentication no'
+        
+    - name: Disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
     
     - name: Update apt and install packages
       apt:
@@ -108,7 +115,7 @@
         name: fail2ban
         enabled: true
         
-        - name: Create var/www/domain
+    - name: Create var/www/domain
       ansible.builtin.file:
         path: /var/www/{{ url }}
         state: directory
@@ -145,7 +152,7 @@
 
     - name: Create the nginx config file
       ansible.builtin.template:
-        src: templates/nginxtemplate
+        src: ../templates/nginxtemplate
         dest: /etc/nginx/sites-available/{{ url }}
 
     - name: Symlink nginx file
