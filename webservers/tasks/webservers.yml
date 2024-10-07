@@ -1,0 +1,11 @@
+---
+- name: Laravel Maintenance
+  hosts: all
+  tasks:
+    - name: write hostname using jinja2
+      ansible.builtin.template:
+       src: templates/test.j2
+       dest: /tmp/hostname
+
+      - name: Set the directory as git safe
+        ansible.builtin.raw: git config --global --add safe.directory /var/www/{{ url }}/www
