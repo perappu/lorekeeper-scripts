@@ -1,7 +1,6 @@
 ---
 - name: Laravel Server Initial Setup
-- hosts: '{{ target }}'
-  become_user: root
+- hosts: '{{ target }}' 
     
     - name: Update and upgrade apt packages
       apt:
