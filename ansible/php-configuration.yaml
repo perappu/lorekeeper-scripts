@@ -1,0 +1,52 @@
+- name: PHP Configuration
+  hosts: all
+  
+  tasks:
+      - name: php fpm - emergency_restart_threshold 10
+      lineinfile:
+        path: /etc/php/8.3/fpm/php-fpm.conf
+        state: present
+        regexp: '^#?emergency_restart_threshold'
+        line: 'emergency_restart_threshold 10'
+	
+	 - name: php fpm - emergency_restart_interval 1m
+      lineinfile:
+        path: /etc/php/8.3/fpm/php-fpm.conf
+        state: present
+        regexp: '^#?emergency_restart_interval'
+        line: 'emergency_restart_interval 1m'
+
+	 - name: php fpm - process_control_timeout 10s
+      lineinfile:
+        path: /etc/php/8.3/fpm/php-fpm.conf
+        state: present
+        regexp: '^#?process_control_timeout'
+        line: 'process_control_timeout 10s'
+		
+	 - name: php fpm pool - pm = ondemand
+      lineinfile:
+        path: /etc/php/8.3/fpm/pool.d/www.conf
+        state: present
+        regexp: '^#?pm ='
+        line: 'pm = ondemand'
+			
+	 - name: php fpm pool - pm.max_children = 80
+      lineinfile:
+        path: /etc/php/8.3/fpm/pool.d/www.conf
+        state: present
+        regexp: '^#?pm.max_children'
+        line: 'pm.max_children = 80'
+		
+	 - name: php fpm pool - pm.process_idle_timeout = 10s
+      lineinfile:
+        path: /etc/php/8.3/fpm/pool.d/www.conf
+        state: present
+        regexp: '^#?pm.process_idle_timeout'
+        line: 'pm.process_idle_timeout = 10s'
+		
+	 - name: php fpm pool - pm.max_requests = 200
+      lineinfile:
+        path: /etc/php/8.3/fpm/pool.d/www.conf
+        state: present
+        regexp: '^#?pm.max_requests'
+        line: 'pm.max_requests = 200'
