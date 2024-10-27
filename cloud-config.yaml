@@ -1,0 +1,6 @@
+#cloud-config
+users:
+  - name: rundeck
+    sudo: ALL=(ALL) NOPASSWD:ALL
+	ssh_authorized_keys:
+      - 
