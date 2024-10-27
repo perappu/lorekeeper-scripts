@@ -1,0 +1,64 @@
+- name: Laravel Post-Deployment
+  hosts: all
+  
+  tasks:
+  
+    - name: Force migrate
+      ansible.builtin.command: php artisan migrate --force
+      become: yes
+      args:
+        chdir: /var/www/{{ url }}/www/
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode
+        
+    - name: Add site settings
+      ansible.builtin.command: php artisan add-site-settings
+      become: yes
+      args:
+        chdir: /var/www/{{ url }}/www/
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode
+        
+    - name: Optimize clear
+      ansible.builtin.command: php artisan optimize:clear
+      become: yes
+      args:
+        chdir: /var/www/{{ url }}/www/
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode
+        
+    - name: Optimize
+      ansible.builtin.command: php artisan optimize
+      become: yes
+      args:
+        chdir: /var/www/{{ url }}/www/
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode
+        
+    - name: Optimize again
+      ansible.builtin.command: php artisan optimize
+      become: yes
+      args:
+        chdir: /var/www/{{ url }}/www/
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode

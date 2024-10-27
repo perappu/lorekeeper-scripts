@@ -1,0 +1,52 @@
+- name: Backup All Databases on Server
+  hosts: all
+
+  tasks:
+    - name: Download Database to server
+      become: true
+      shell: |
+        mkdir dbs
+        mysql -N -e 'show databases' | while read dbname; do mysqldump -u {{ db_user_name}} -p"{{ db_user_password }}" --complete-insert --routines --triggers --single-transaction --quick --lock-tables=false "$dbname" > dbs/"$dbname"-{{ ansible_date_time.date }}.sql --no-tablespaces; done
+      register: result
+        
+    - name: Show result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+      when: not ansible_check_mode
+      
+    - name: Get files on remote machine because ansible sucks
+      find:
+        paths: dbs/
+      register: sqls
+
+    - name: Downloading backup to local computer
+      become: true
+      ansible.builtin.fetch:
+        src: "{{ item.path }}"
+        dest: "{{ item.path }}"
+        flat: yes
+      with_items: "{{ sqls.files }}"
+    
+    - name: Copy file to bucket
+      amazon.aws.s3_object:
+        bucket: {{ bucket }}
+        object: "{{ item.path }}"
+        src: "{{ item.path }}"
+        mode: put
+        permission: "private"
+        s3_url: "{{ s3_url }}"
+      environment:
+        AWS_ACCESS_KEY: "{{ access_key }}"
+        AWS_SECRET_ACCESS_KEY: "{{ secret_key }}"
+      with_items: "{{ sqls.files }}"
+      
+    - name: Remove remote file
+      ansible.builtin.file:
+        path: "dbs/"
+        state: absent
+    
+    - name: Remove local file
+      ansible.builtin.file:
+        path: "dbs/"
+        state: absent
+      delegate_to: localhost

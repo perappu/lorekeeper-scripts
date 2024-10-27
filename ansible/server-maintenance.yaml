@@ -1,0 +1,30 @@
+- name: Daily Server Maintenance
+  hosts: all
+  
+  tasks:
+    - name: update apt list
+      become: yes
+      apt:
+        update_cache: yes
+      
+    - name: Perform a dist-upgrade.
+      become: yes
+      ansible.builtin.apt:
+        upgrade: dist
+
+    - name: Check if a reboot is required.
+      become: yes
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: no
+      register: reboot_required_file
+
+    - name: Reboot the server (if required).
+      become: yes
+      ansible.builtin.reboot:
+      when: reboot_required_file.stat.exists == true
+
+    - name: Remove dependencies that are no longer required.
+      become: yes
+      ansible.builtin.apt:
+        autoremove: yes
